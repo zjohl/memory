@@ -14,6 +14,7 @@ class Memory extends React.Component {
 
         this.state = {
             tiles: tileStates,
+            allowClicks: true,
             revealedTileIdx: -1,
             numClicks: 0,
         };
@@ -48,21 +49,27 @@ class Memory extends React.Component {
     }
 
     onTileClick(tile) {
-        if (tile.active && !tile.visible) {
+        if (this.state.allowClicks && tile.active && !tile.visible) {
             this.setState({numClicks: this.state.numClicks + 1});
             this.revealTile(tile);
 
             if (this.state.revealedTileIdx !== -1) {
                 let revealedTile = _.nth(this.state.tiles, this.state.revealedTileIdx);
+                this.setState({allowClicks: false});
 
                 if (revealedTile.value === tile.value) {
-                    this.deactivateTile(tile);
-                    this.deactivateTile(revealedTile);
+                    setTimeout(() => {
+                        this.deactivateTile(tile);
+                        this.deactivateTile(revealedTile);
+                        this.setState({revealedTileIdx: -1, allowClicks: true});
+                    }, 1000);
                 } else {
-                    this.hideTile(tile);
-                    this.hideTile(revealedTile);
+                    setTimeout(() => {
+                        this.hideTile(tile);
+                        this.hideTile(revealedTile);
+                        this.setState({revealedTileIdx: -1, allowClicks: true});
+                    }, 1000);
                 }
-                this.setState({revealedTileIdx: -1});
             } else {
                 this.setState({revealedTileIdx: tile.index});
             }
@@ -72,9 +79,14 @@ class Memory extends React.Component {
     restart() {
         this.setState({
             tiles: this.generateTiles(),
+            allowClicks: true,
             revealedTileIdx: -1,
             numClicks: 0,
         });
+    }
+
+    hasWon() {
+        return _.every(this.state.tiles, tile => {return !tile.active});
     }
 
     renderTiles() {
@@ -87,12 +99,16 @@ class Memory extends React.Component {
     }
 
     render() {
-        return<div className="game">
-            <div className="tiles">
-                {this.renderTiles()}
+        return (
+            <div className="game">
+                {this.hasWon() ? <p>YOU WON !!!</p> : <p>Super Cool Memory Game</p>}
+                <div className="tiles">
+                    {this.renderTiles()}
+                </div>
+                <button className="restart-button" onClick={this.restart.bind(this)}>Restart</button>
+                <p>Num Clicks: {this.state.numClicks}</p>
             </div>
-            <button className="restart-button" onClick={this.restart.bind(this)}>Restart</button>
-        </div>;
+        );
     }
 }
 
